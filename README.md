@@ -167,6 +167,58 @@ bun run dev
 
 ---
 
+## 認可の仕組み（セキュリティ）
+
+この MCP サーバーは freee の会計データにアクセスするため、認可の仕組みを理解しておくことで安心して利用できます。
+
+### 2 段階の OAuth
+
+認可は **2 段階** で行われます。
+
+```
+[MCPクライアント]  ←→  [このWorker]  ←→  [freee]
+   (Cursor等)         OAuthProvider      freee API
+```
+
+1. **MCP クライアント ↔ この Worker**: OAuth 2.1 + PKCE（RFC 7636）
+2. **この Worker ↔ freee**: OAuth 2.0 認可コードフロー
+
+MCP クライアントは freee の認証情報を直接扱いません。freee のトークンは Worker 内の KV にのみ保存され、MCP クライアントには渡されません。
+
+### 認可フロー
+
+1. **MCP クライアントが接続** → OAuthProvider が認証を要求し、`/authorize` へリダイレクト
+2. **GET /authorize** → MCP の OAuth リクエストを解析し、freee の認可画面へリダイレクト
+3. **ユーザーが freee でログイン・許可** → freee が `/callback` にリダイレクト
+4. **GET /callback** → freee の認可コードをトークンに交換し、KV に保存。MCP の OAuth を完了し、MCP クライアントへリダイレクト
+5. **MCP API リクエスト** → MCP クライアントが Bearer トークンで `/mcp` にリクエスト。Worker がトークンを検証し、KV から freee トークンを取得して API を呼び出し
+
+### MCP クライアント用トークン
+
+- **形式**: 不透明トークン（opaque token）`{userId}:{grantId}:{randomSecret}`
+- **JWT ではない**: サーバー側の KV に保存し、リクエスト時に検証
+- **有効期限**: 6 時間（freee のアクセストークンと同期）
+
+### トークン検証の流れ
+
+1. `Authorization: Bearer {token}` からトークンを取得
+2. トークンを SHA-256 でハッシュし、KV のキー `token:{userId}:{grantId}:{hash}` で検索
+3. 有効期限を確認
+4. トークンから導出した鍵で暗号化された `props`（`freeeUserId` など）を復号
+5. 復号に失敗すればトークンは無効（偽造・改ざんの検出）
+
+トークン文字列そのものは KV に保存されません。ハッシュと暗号化されたメタデータのみが保存されるため、KV が漏洩してもトークンは復元されません。
+
+### データの保存場所
+
+| 保存場所 | キー | 内容 |
+|----------|------|------|
+| `FREEE_TOKENS` | `pending:{uuid}` | 認可中の MCP リクエスト（10 分 TTL） |
+| `FREEE_TOKENS` | `token:{freeeUserId}` | freee の access/refresh トークン |
+| `OAUTH_KV` | `token:{userId}:{grantId}:{hash}` | MCP トークンのメタデータ（暗号化された props 含む） |
+
+---
+
 ## ライセンス
 
 Apache License 2.0
