@@ -1,8 +1,12 @@
 {
 	"mcpServers": {
-		"cloudflare": {
+		"freee": {
 			"type": "http",
-			"url": "https://bindings.mcp.cloudflare.com/mcp"
+			"url": "https://freee-remote-mcp.your-subdomain.workers.dev/mcp"
+		},
+		"freee-local": {
+			"type": "http",
+			"url": "http://localhost:8787/mcp"
 		}
 	}
 }

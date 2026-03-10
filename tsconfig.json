@@ -41,7 +41,6 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
-		"noPropertyAccessFromIndexSignature": true,
 
 		"types": ["./worker-configuration.d.ts", "node"]
 	},

@@ -1,7 +1,21 @@
 {
-	"name": "cloudflare-worker-template",
+	"name": "freee-remote-mcp",
 	"version": "0.0.0",
+	"license": "Apache-2.0",
 	"private": true,
+	"cloudflare": {
+		"bindings": {
+			"FREEE_CLIENT_ID": {
+				"description": "freee OAuth アプリの [クライアント ID](https://secure.freee.co.jp/oauth/applications) を入力"
+			},
+			"FREEE_CLIENT_SECRET": {
+				"description": "freee OAuth アプリの [クライアントシークレット](https://secure.freee.co.jp/oauth/applications) を入力"
+			},
+			"WORKER_URL": {
+				"description": "デプロイ後の Worker URL（例: https://freee-remote-mcp.xxx.workers.dev）。末尾スラッシュなし"
+			}
+		}
+	},
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
@@ -20,6 +34,9 @@
 		"wrangler": "^4.69.0"
 	},
 	"dependencies": {
-		"hono": "^4.12.3"
+		"@cloudflare/workers-oauth-provider": "^0.3.0",
+		"@modelcontextprotocol/sdk": "^1.27.1",
+		"hono": "^4.12.3",
+		"zod": "^4.3.6"
 	}
 }
