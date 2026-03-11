@@ -1,5 +1,8 @@
 {
 	"mcpServers": {
+		"cloudflare": {
+			"url": "https://docs.mcp.cloudflare.com/mcp"
+		},
 		"freee": {
 			"type": "http",
 			"url": "https://freee-remote-mcp.your-subdomain.workers.dev/mcp"
