@@ -13,11 +13,12 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 
 | Command | Purpose |
 |---------|---------|
-| `bunx wrangler dev` | Local development |
-| `bunx wrangler deploy` | Deploy to Cloudflare |
-| `bunx wrangler types` | Generate TypeScript types |
+| `bun run dev` | Local development |
+| `bun run deploy` | Deploy to Cloudflare |
+| `bun run cf-typegen` | Generate TypeScript types |
+| `bun run check:fix` | Lint + format (autofix) |
 
-Run `wrangler types` after changing bindings in wrangler.jsonc.
+Run `cf-typegen` after changing bindings in wrangler.jsonc.
 
 ## Node.js Compatibility
 
