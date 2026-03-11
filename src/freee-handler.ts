@@ -1,8 +1,6 @@
-import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
 
 import { buildFreeeAuthUrl, exchangeFreeeCode } from "./freee/oauth";
-import { FreeeTokenStore } from "./freee/token-store";
 import type { Env } from "./types";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -17,13 +15,12 @@ app.get("/authorize", async (c) => {
 		return c.text("Bad Request: missing client_id", 400);
 	}
 
-	// Persist the parsed OAuth request so we can retrieve it after freee callback
+	// Persist the parsed OAuth request in PendingState DO (atomic get-and-clear on callback)
 	const freeeState = crypto.randomUUID();
-	await c.env.FREEE_TOKENS.put(
-		`pending:${freeeState}`,
-		JSON.stringify(oauthReqInfo),
-		{ expirationTtl: 600 },
+	const pendingStub = c.env.PENDING_STATE_DO.get(
+		c.env.PENDING_STATE_DO.idFromName(`pending-${freeeState}`),
 	);
+	await pendingStub.store(oauthReqInfo);
 
 	return c.redirect(buildFreeeAuthUrl(c.env, freeeState), 302);
 });
@@ -31,7 +28,7 @@ app.get("/authorize", async (c) => {
 /**
  * GET /callback
  * Receives freee OAuth callback, exchanges code for freee tokens,
- * stores them in KV, and completes the MCP OAuth flow.
+ * stores them in FreeeTokenStore DO, and completes the MCP OAuth flow.
  */
 app.get("/callback", async (c) => {
 	const { code, state, error } = c.req.query();
@@ -43,15 +40,14 @@ app.get("/callback", async (c) => {
 		return c.text("Bad Request: missing code or state", 400);
 	}
 
-	// Retrieve pending OAuth request
-	const oauthReqInfo = await c.env.FREEE_TOKENS.get<AuthRequest>(
-		`pending:${state}`,
-		"json",
+	// Atomically retrieve and clear pending OAuth request
+	const pendingStub = c.env.PENDING_STATE_DO.get(
+		c.env.PENDING_STATE_DO.idFromName(`pending-${state}`),
 	);
+	const oauthReqInfo = await pendingStub.getAndClear();
 	if (!oauthReqInfo) {
 		return c.text("Invalid or expired state", 400);
 	}
-	await c.env.FREEE_TOKENS.delete(`pending:${state}`);
 
 	// Exchange freee authorization code for tokens
 	const freeeTokens = await exchangeFreeeCode(code, c.env);
@@ -66,9 +62,11 @@ app.get("/callback", async (c) => {
 	const userData = (await userRes.json()) as { user: { id: number } };
 	const freeeUserId = String(userData.user.id);
 
-	// Store freee tokens in KV
-	const tokenStore = new FreeeTokenStore(c.env.FREEE_TOKENS, c.env);
-	await tokenStore.storeTokens(freeeUserId, {
+	// Store freee tokens in FreeeTokenStore DO
+	const tokenStub = c.env.FREEE_TOKEN_DO.get(
+		c.env.FREEE_TOKEN_DO.idFromName(`user-${freeeUserId}`),
+	);
+	await tokenStub.storeInitial({
 		accessToken: freeeTokens.access_token,
 		refreshToken: freeeTokens.refresh_token,
 		expiresAt: Date.now() + freeeTokens.expires_in * 1000,

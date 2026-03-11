@@ -1,8 +1,12 @@
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 
+import { FreeeTokenStoreDO } from "./durable-objects/freee-token-store";
+import { PendingStateDO } from "./durable-objects/pending-state";
 import { freeeHandler } from "./freee-handler";
 import { mcpApiHandler } from "./mcp/handler";
 import type { Env } from "./types";
+
+export { FreeeTokenStoreDO, PendingStateDO };
 
 /**
  * freee Remote MCP Server
@@ -11,8 +15,9 @@ import type { Env } from "./types";
  * - OAuthProvider handles RFC 7591 DCR, OAuth 2.1 with PKCE, token management
  * - freeeHandler (Hono) handles /authorize and /callback routes
  * - mcpApiHandler handles authenticated /mcp requests
+ * - FreeeTokenStoreDO, PendingStateDO: Durable Objects for race-free token/state handling
  *
- * Required KV bindings: OAUTH_KV, FREEE_TOKENS
+ * Required KV bindings: OAUTH_KV
  * Required secrets: FREEE_CLIENT_ID, FREEE_CLIENT_SECRET
  * Required vars: WORKER_URL
  */

@@ -1,8 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
+import type { FreeeTokenStoreDO } from "../durable-objects/freee-token-store";
 import { FreeeApiClient } from "../freee/client";
-import { FreeeTokenStore } from "../freee/token-store";
 import type { Env, Props } from "../types";
 import { registerApiTools } from "./tools/api";
 import { registerAuthTools } from "./tools/auth";
@@ -47,11 +47,13 @@ export const mcpApiHandler = {
 
 		const props = (ctx as ExecutionContext & { props: Props }).props;
 
-		const tokenStore = new FreeeTokenStore(env.FREEE_TOKENS, env);
+		const tokenStub = env.FREEE_TOKEN_DO.get(
+			env.FREEE_TOKEN_DO.idFromName(`user-${props.freeeUserId}`),
+		) as DurableObjectStub<FreeeTokenStoreDO>;
 
-		// Fetch freee tokens (auto-refresh if near expiry)
-		const record = await tokenStore.getTokens(props.freeeUserId);
-		if (!record) {
+		// Fetch freee tokens (auto-refresh if near expiry, single-flight in DO)
+		const freshRecord = await tokenStub.ensureFresh();
+		if (!freshRecord) {
 			return new Response(
 				JSON.stringify({ error: "Token not found. Please re-authenticate." }),
 				{
@@ -61,7 +63,6 @@ export const mcpApiHandler = {
 			);
 		}
 
-		const freshRecord = await tokenStore.ensureFresh(props.freeeUserId, record);
 		const freeeClient = new FreeeApiClient(freshRecord.accessToken);
 
 		// Create a fresh McpServer per request (stateless)
@@ -72,14 +73,9 @@ export const mcpApiHandler = {
 
 		registerApiTools(server, freeeClient);
 		registerPathsTools(server);
-		registerAuthTools(server, freshRecord, tokenStore, props.freeeUserId);
-		registerCompanyTools(
-			server,
-			freeeClient,
-			freshRecord,
-			tokenStore,
-			props.freeeUserId,
-		);
+		registerAuthTools(server, freshRecord, tokenStub);
+		registerCompanyTools(server, freeeClient, freshRecord, tokenStub);
+
 		registerUserTools(server, freeeClient);
 
 		// Use Web Standard Streamable HTTP transport (stateless mode)

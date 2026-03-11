@@ -1,10 +1,10 @@
-import type { Env } from "../types";
+import type { DoEnv } from "../types-base";
 
 const FREEE_AUTH_URL =
 	"https://accounts.secure.freee.co.jp/public_api/authorize";
 const FREEE_TOKEN_URL = "https://accounts.secure.freee.co.jp/public_api/token";
 
-export function buildFreeeAuthUrl(env: Env, state: string): string {
+export function buildFreeeAuthUrl(env: DoEnv, state: string): string {
 	const url = new URL(FREEE_AUTH_URL);
 	url.searchParams.set("client_id", env.FREEE_CLIENT_ID);
 	url.searchParams.set("redirect_uri", `${env.WORKER_URL}/callback`);
@@ -24,7 +24,7 @@ interface FreeeTokenResponse {
 
 export async function exchangeFreeeCode(
 	code: string,
-	env: Env,
+	env: DoEnv,
 ): Promise<FreeeTokenResponse> {
 	const res = await fetch(FREEE_TOKEN_URL, {
 		method: "POST",
@@ -45,7 +45,7 @@ export async function exchangeFreeeCode(
 
 export async function refreshFreeeTokens(
 	refreshToken: string,
-	env: Env,
+	env: DoEnv,
 ): Promise<FreeeTokenResponse> {
 	const res = await fetch(FREEE_TOKEN_URL, {
 		method: "POST",

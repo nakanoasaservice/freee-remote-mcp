@@ -1,16 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
+import type { FreeeTokenStoreDO } from "../../durable-objects/freee-token-store";
 import type { FreeeApiClient } from "../../freee/client";
-import type { FreeeTokenStore } from "../../freee/token-store";
 import type { FreeeTokenRecord } from "../../types";
 
 export function registerCompanyTools(
 	server: McpServer,
 	client: FreeeApiClient,
 	record: FreeeTokenRecord,
-	tokenStore: FreeeTokenStore,
-	freeeUserId: string,
+	tokenStub: DurableObjectStub<FreeeTokenStoreDO>,
 ): void {
 	server.registerTool(
 		"freee_list_companies",
@@ -63,8 +62,7 @@ export function registerCompanyTools(
 			},
 		},
 		async ({ company_id }) => {
-			const updated = { ...record, companyId: company_id };
-			await tokenStore.storeTokens(freeeUserId, updated);
+			await tokenStub.updateCompanyId(company_id);
 			return {
 				content: [
 					{

@@ -1,14 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-import type { FreeeTokenStore } from "../../freee/token-store";
+import type { FreeeTokenStoreDO } from "../../durable-objects/freee-token-store";
 import type { FreeeTokenRecord } from "../../types";
 
 export function registerAuthTools(
 	server: McpServer,
 	record: FreeeTokenRecord,
-	tokenStore: FreeeTokenStore,
-	freeeUserId: string,
+	tokenStub: DurableObjectStub<FreeeTokenStoreDO>,
 ): void {
 	server.registerTool(
 		"freee_auth_status",
@@ -45,7 +44,7 @@ export function registerAuthTools(
 			inputSchema: {},
 		},
 		async () => {
-			await tokenStore.deleteTokens(freeeUserId);
+			await tokenStub.deleteTokens();
 			return {
 				content: [
 					{

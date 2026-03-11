@@ -14,16 +14,29 @@
 	/**
 	 * KV Namespaces
 	 * Create with: wrangler kv namespace create OAUTH_KV
-	 *              wrangler kv namespace create FREEE_TOKENS
 	 */
 	"kv_namespaces": [
 		{
 			"binding": "OAUTH_KV",
-			"id": "d11df1c2ef40454fbd471a7ea2bfee54"
-		},
+			"id": "f5fb31f5be314c4a9dd706caa7db5d33"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "FREEE_TOKEN_DO",
+				"class_name": "FreeeTokenStoreDO"
+			},
+			{
+				"name": "PENDING_STATE_DO",
+				"class_name": "PendingStateDO"
+			}
+		]
+	},
+	"migrations": [
 		{
-			"binding": "FREEE_TOKENS",
-			"id": "de5c68705f1544f0ba3248dfd49ccd39"
+			"tag": "v1",
+			"new_sqlite_classes": ["FreeeTokenStoreDO", "PendingStateDO"]
 		}
 	],
 	/**
@@ -36,7 +49,6 @@
 	}
 	/**
 	 * Secrets (set via: wrangler secret put <NAME>)
-	 * - FREEE_CLIENT_ID
 	 * - FREEE_CLIENT_SECRET
 	 */
 }

@@ -155,13 +155,16 @@ bun run dev
 - **OAuthProvider** (`@cloudflare/workers-oauth-provider`): RFC 7591 DCR、OAuth 2.1 + PKCE、トークン管理
 - **freeeHandler** (Hono): `/authorize`、`/callback` ルート
 - **mcpApiHandler**: 認証済み `/mcp` リクエストの処理
+- **FreeeTokenStoreDO**: ユーザー単位の Durable Object。トークン保存・Single-flight refresh・`updateCompanyId` の read-modify-write を直列化
+- **PendingStateDO**: OAuth state 単位の Durable Object。認可中の `pending` をアトミックに get-and-clear
 
 ### 必要なリソース
 
 | リソース | 用途 |
 |----------|------|
 | `OAUTH_KV` | OAuth プロバイダーの状態・トークン保存 |
-| `FREEE_TOKENS` | freee アクセストークン・リフレッシュトークンの保存 |
+| `FREEE_TOKEN_DO` | freee トークン用 Durable Object（ユーザー単位） |
+| `PENDING_STATE_DO` | OAuth 認可中状態用 Durable Object（state 単位） |
 
 これらは Deploy to Cloudflare 時に自動プロビジョニングされます。
 
@@ -183,15 +186,15 @@ bun run dev
 1. **MCP クライアント ↔ この Worker**: OAuth 2.1 + PKCE（RFC 7636）
 2. **この Worker ↔ freee**: OAuth 2.0 認可コードフロー
 
-MCP クライアントは freee の認証情報を直接扱いません。freee のトークンは Worker 内の KV にのみ保存され、MCP クライアントには渡されません。
+MCP クライアントは freee の認証情報を直接扱いません。freee のトークンは Durable Object 内にのみ保存され、MCP クライアントには渡されません。
 
 ### 認可フロー
 
 1. **MCP クライアントが接続** → OAuthProvider が認証を要求し、`/authorize` へリダイレクト
-2. **GET /authorize** → MCP の OAuth リクエストを解析し、freee の認可画面へリダイレクト
+2. **GET /authorize** → MCP の OAuth リクエストを解析し、PendingState に保存。freee の認可画面へリダイレクト
 3. **ユーザーが freee でログイン・許可** → freee が `/callback` にリダイレクト
-4. **GET /callback** → freee の認可コードをトークンに交換し、KV に保存。MCP の OAuth を完了し、MCP クライアントへリダイレクト
-5. **MCP API リクエスト** → MCP クライアントが Bearer トークンで `/mcp` にリクエスト。Worker がトークンを検証し、KV から freee トークンを取得して API を呼び出し
+4. **GET /callback** → PendingState からアトミックに取得・削除。freee の認可コードをトークンに交換し、FreeeTokenStore に保存。MCP の OAuth を完了し、MCP クライアントへリダイレクト
+5. **MCP API リクエスト** → MCP クライアントが Bearer トークンで `/mcp` にリクエスト。Worker がトークンを検証し、FreeeTokenStore から freee トークンを取得（Single-flight refresh）して API を呼び出し
 
 ### MCP クライアント用トークン
 
@@ -211,10 +214,10 @@ MCP クライアントは freee の認証情報を直接扱いません。freee 
 
 ### データの保存場所
 
-| 保存場所 | キー | 内容 |
-|----------|------|------|
-| `FREEE_TOKENS` | `pending:{uuid}` | 認可中の MCP リクエスト（10 分 TTL） |
-| `FREEE_TOKENS` | `token:{freeeUserId}` | freee の access/refresh トークン |
+| 保存場所 | キー/ID | 内容 |
+|----------|---------|------|
+| `PendingStateDO` | `pending:{state}` | 認可中の MCP リクエスト（アトミック get-and-clear） |
+| `FreeeTokenStoreDO` | `user:{freeeUserId}` | freee の access/refresh トークン |
 | `OAUTH_KV` | `token:{userId}:{grantId}:{hash}` | MCP トークンのメタデータ（暗号化された props 含む） |
 
 ---
