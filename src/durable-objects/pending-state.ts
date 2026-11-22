@@ -12,7 +12,7 @@ const PENDING_KEY = "oauthReq";
  */
 export class PendingStateDO extends DurableObject<DoEnv> {
 	// Required for Durable Object initialization
-	// biome-ignore lint/complexity/noUselessConstructor: Durable Object requires super(ctx, env)
+	// oxlint-disable-next-line no-useless-constructor -- Durable Object requires super(ctx, env)
 	constructor(ctx: DurableObjectState, env: DoEnv) {
 		super(ctx, env);
 	}

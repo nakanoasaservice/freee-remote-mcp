@@ -64,16 +64,16 @@ freee API を MCP (Model Context Protocol) でリモートアクセスするた�
 
 ```bash
 # プロジェクトディレクトリで実行（Deploy でクローンしたリポジトリ）
-bunx wrangler secret put FREEE_CLIENT_SECRET
+pnpm exec wrangler secret put FREEE_CLIENT_SECRET
 # プロンプトで freee のクライアントシークレットを入力
 ```
 
 #### 必須環境変数（`vars`）
 
-| 変数名 | 説明 | 設定方法 |
-|--------|------|----------|
-| `WORKER_URL` | デプロイした Worker の URL（末尾スラッシュなし） | `wrangler.jsonc` の `vars` またはダッシュボード |
-| `FREEE_CLIENT_ID` | freee OAuth のクライアント ID | 同上 |
+| 変数名            | 説明                                             | 設定方法                                        |
+| ----------------- | ------------------------------------------------ | ----------------------------------------------- |
+| `WORKER_URL`      | デプロイした Worker の URL（末尾スラッシュなし） | `wrangler.jsonc` の `vars` またはダッシュボード |
+| `FREEE_CLIENT_ID` | freee OAuth のクライアント ID                    | 同上                                            |
 
 `wrangler.jsonc` を編集する場合:
 
@@ -87,7 +87,7 @@ bunx wrangler secret put FREEE_CLIENT_SECRET
 編集後、再デプロイ:
 
 ```bash
-bun run deploy
+pnpm run deploy
 ```
 
 ---
@@ -111,12 +111,12 @@ Cursor やその他の MCP クライアントで、以下のように設定し�
 
 ```json
 {
-  "mcpServers": {
-    "freee": {
-      "type": "http",
-      "url": "https://freee-remote-mcp.your-subdomain.workers.dev/mcp"
-    }
-  }
+	"mcpServers": {
+		"freee": {
+			"type": "http",
+			"url": "https://freee-remote-mcp.your-subdomain.workers.dev/mcp"
+		}
+	}
 }
 ```
 
@@ -136,14 +136,14 @@ MCP クライアントから初めて接続すると、OAuth 認証フローが�
 
 ```bash
 # 依存関係のインストール
-bun install
+pnpm install
 
 # シークレットの設定（.dev.vars に記載）
 cp .dev.vars.example .dev.vars
 # .dev.vars を編集して FREEE_CLIENT_ID, FREEE_CLIENT_SECRET, WORKER_URL を設定
 
 # ローカルで起動
-bun run dev
+pnpm run dev
 ```
 
 ローカルでは `http://localhost:8787` で動作します。MCP の URL は `http://localhost:8787/mcp` です。
@@ -160,10 +160,10 @@ bun run dev
 
 ### 必要なリソース
 
-| リソース | 用途 |
-|----------|------|
-| `OAUTH_KV` | OAuth プロバイダーの状態・トークン保存 |
-| `FREEE_TOKEN_DO` | freee トークン用 Durable Object（ユーザー単位） |
+| リソース           | 用途                                            |
+| ------------------ | ----------------------------------------------- |
+| `OAUTH_KV`         | OAuth プロバイダーの状態・トークン保存          |
+| `FREEE_TOKEN_DO`   | freee トークン用 Durable Object（ユーザー単位） |
 | `PENDING_STATE_DO` | OAuth 認可中状態用 Durable Object（state 単位） |
 
 これらは Deploy to Cloudflare 時に自動プロビジョニングされます。
@@ -214,14 +214,26 @@ MCP クライアントは freee の認証情報を直接扱いません。freee 
 
 ### データの保存場所
 
-| 保存場所 | キー/ID | 内容 |
-|----------|---------|------|
-| `PendingStateDO` | `pending:{state}` | 認可中の MCP リクエスト（アトミック get-and-clear） |
-| `FreeeTokenStoreDO` | `user:{freeeUserId}` | freee の access/refresh トークン |
-| `OAUTH_KV` | `token:{userId}:{grantId}:{hash}` | MCP トークンのメタデータ（暗号化された props 含む） |
+| 保存場所            | キー/ID                           | 内容                                                |
+| ------------------- | --------------------------------- | --------------------------------------------------- |
+| `PendingStateDO`    | `pending:{state}`                 | 認可中の MCP リクエスト（アトミック get-and-clear） |
+| `FreeeTokenStoreDO` | `user:{freeeUserId}`              | freee の access/refresh トークン                    |
+| `OAUTH_KV`          | `token:{userId}:{grantId}:{hash}` | MCP トークンのメタデータ（暗号化された props 含む） |
 
 ---
 
 ## ライセンス
 
 Apache License 2.0
+
+## Development toolchain
+
+Use Node.js 24 and the pnpm version pinned in `package.json`.
+Run `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm test`, and `pnpm build`.
+Vite+ provides formatting, linting, type checks and tests. Tests run locally
+in the Cloudflare Workers runtime. The build task bundles with Wrangler in
+dry-run mode; it does not deploy. Use `pnpm dev` for local development.
+
+Update Vite+ and its bundled tools together with `vp migrate`, then update the
+pinned `setup-vp` version in CI and refresh the pnpm lockfile. Run the project's
+checks before committing toolchain updates.
