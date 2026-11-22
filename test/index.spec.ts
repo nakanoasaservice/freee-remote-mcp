@@ -1,21 +1,29 @@
 import { exports } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
-
-describe("Hello World worker", () => {
-	it("responds with Hello World! (unit style)", async () => {
-		const request = new IncomingRequest("http://example.com");
-		// Create an empty context to pass to `worker.fetch()`.
-
-		const response = await exports.default.fetch(request);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+describe("freee Remote MCP worker", () => {
+	it("describes the MCP and OAuth endpoints", async () => {
+		const response = await exports.default.fetch("https://example.com/");
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-type")).toContain("application/json");
+		expect(await response.json()).toMatchObject({
+			name: "freee Remote MCP Server",
+			endpoints: {
+				mcp: "/mcp",
+				oauth: {
+					register: "/register",
+					authorize: "/authorize",
+					token: "/token",
+					wellKnown: "/.well-known/oauth-authorization-server",
+				},
+			},
+		});
 	});
 
-	it("responds with Hello World! (integration style)", async () => {
-		const response = await exports.default.fetch("https://example.com");
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	it("returns 404 for unknown routes", async () => {
+		const response = await exports.default.fetch(
+			"https://example.com/not-found",
+		);
+		expect(response.status).toBe(404);
 	});
 });

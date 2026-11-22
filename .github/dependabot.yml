@@ -2,9 +2,15 @@
 
 version: 2
 updates:
-  # Bun パッケージ
-  - package-ecosystem: "bun"
+  # npm packages (pnpm)
+  - package-ecosystem: "npm"
     directory: "/"
+    # Update the pinned Vite+ toolchain and setup-vp version together.
+    ignore:
+      - dependency-name: "vite"
+      - dependency-name: "vite-plus"
+      - dependency-name: "vitest"
+      - dependency-name: "@voidzero-dev/vite-plus-core"
     schedule:
       interval: "weekly"
       day: "monday"

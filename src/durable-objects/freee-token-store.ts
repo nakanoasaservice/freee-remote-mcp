@@ -15,7 +15,7 @@ export class FreeeTokenStoreDO extends DurableObject<DoEnv> {
 	private refreshPromise: Promise<FreeeTokenRecord> | null = null;
 
 	// Required for Durable Object initialization
-	// biome-ignore lint/complexity/noUselessConstructor: DurableObject requires super(ctx, env)
+	// oxlint-disable-next-line no-useless-constructor -- DurableObject requires super(ctx, env)
 	constructor(ctx: DurableObjectState, env: DoEnv) {
 		super(ctx, env);
 	}

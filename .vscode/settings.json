@@ -1,8 +1,8 @@
 {
-	"editor.defaultFormatter": "biomejs.biome",
+	"editor.defaultFormatter": "oxc.oxc-vscode",
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
-		"source.fixAll.biome": "always"
+		"source.fixAll.oxc": "always"
 	},
 
 	"files.associations": {

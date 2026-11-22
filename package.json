@@ -1,8 +1,41 @@
 {
 	"name": "freee-remote-mcp",
 	"version": "0.0.0",
-	"license": "Apache-2.0",
 	"private": true,
+	"license": "Apache-2.0",
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vp test run",
+		"cf-typegen": "wrangler types",
+		"check:fix": "vp check --fix",
+		"check": "vp check",
+		"build": "vp run build:worker",
+		"build:worker": "wrangler deploy --dry-run --outdir dist"
+	},
+	"dependencies": {
+		"@cloudflare/workers-oauth-provider": "^0.3.0",
+		"@modelcontextprotocol/sdk": "^1.27.1",
+		"hono": "^4.12.8",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-plugin": "^1.8.4",
+		"@types/node": "^25.5.0",
+		"typescript": "^5.5.2",
+		"vite-plus": "catalog:",
+		"vitest": "catalog:",
+		"wrangler": "^4.73.0"
+	},
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"version": "24.22.1"
+		}
+	},
+	"packageManager": "pnpm@12.21.0",
 	"cloudflare": {
 		"bindings": {
 			"FREEE_CLIENT_ID": {
@@ -15,28 +48,5 @@
 				"description": "デプロイ後の Worker URL（例: https://freee-remote-mcp.xxx.workers.dev）。末尾スラッシュなし"
 			}
 		}
-	},
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types",
-		"check:fix": "biome check --write",
-		"check": "biome check"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.7",
-		"@cloudflare/vitest-pool-workers": "^0.13.0",
-		"@types/node": "^25.5.0",
-		"typescript": "^5.5.2",
-		"vitest": "^4.1.0",
-		"wrangler": "^4.73.0"
-	},
-	"dependencies": {
-		"@cloudflare/workers-oauth-provider": "^0.3.0",
-		"@modelcontextprotocol/sdk": "^1.27.1",
-		"hono": "^4.12.8",
-		"zod": "^4.3.6"
 	}
 }
