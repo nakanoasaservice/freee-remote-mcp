@@ -23,7 +23,7 @@
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-plugin": "^1.8.4",
-		"@types/node": "^25.5.0",
+		"@types/node": "^26.6.6",
 		"typescript": "^5.5.2",
 		"vite-plus": "catalog:",
 		"vitest": "catalog:",
