@@ -16,7 +16,7 @@
 		"build:worker": "wrangler deploy --dry-run --outdir dist"
 	},
 	"dependencies": {
-		"@cloudflare/workers-oauth-provider": "^0.3.0",
+		"@cloudflare/workers-oauth-provider": "^1.2.4",
 		"@modelcontextprotocol/sdk": "^1.27.1",
 		"hono": "^4.12.8",
 		"zod": "^4.3.6"
